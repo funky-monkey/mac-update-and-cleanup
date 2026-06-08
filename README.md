@@ -1,46 +1,46 @@
 # mac-update-and-cleanup
 
-Een enkel zsh-script dat je hele Mac bijwerkt én opschoont via één commando: `update`.
+A single zsh script that updates and cleans your entire Mac with one command: `update`.
 
-## Wat het doet
+## What it does
 
 ### Updates
-| Tool | Wat er gebeurt |
-|------|----------------|
+| Tool | What happens |
+|------|--------------|
 | Apple Software Update | `softwareupdate --install --all` |
 | Homebrew | `brew update` + `upgrade` (formulae + casks `--greedy`) |
-| Mac App Store | `mas upgrade` *(vereist `brew install mas`)* |
+| Mac App Store | `mas upgrade` *(requires `brew install mas`)* |
 | Node.js / npm | `npm install -g npm@latest` + `npm update -g` |
-| Python / pip3 | `pip3 install --upgrade pip` + alle outdated packages |
+| Python / pip3 | `pip3 install --upgrade pip` + all outdated packages |
 | Ruby gems | `gem update --system` + `gem update` + `gem cleanup` |
-| Rust | `rustup update` + `cargo install-update --all` *(vereist cargo-update)* |
-| Oh My Zsh | `omz update --unattended` of `git pull` als fallback |
+| Rust | `rustup update` + `cargo install-update --all` *(requires cargo-update)* |
+| Oh My Zsh | `omz update --unattended` or `git pull` as fallback |
 
-### Cleanup (CleanMyMac-stijl)
-Wordt uitgevoerd **na** alle updates. **Voor elke stap vraagt het script bevestiging** (`[j/N]`) en toont de huidige grootte zodat je bewust kiest wat je verwijdert:
+### Cleanup (CleanMyMac-style)
+Runs **after** all updates. **Each step asks for confirmation** (`[y/N]`) and shows the current size so you decide what gets deleted:
 
-| Stap | Wat er verwijderd wordt |
-|------|------------------------|
+| Step | What gets removed |
+|------|-------------------|
 | `~/Library/Caches` | User app caches |
-| `~/Library/Logs` | User log bestanden |
-| Xcode DerivedData | Build artefacten |
-| Xcode iOS DeviceSupport | Oude device firmware bestanden |
+| `~/Library/Logs` | User log files |
+| Xcode DerivedData | Build artifacts |
+| Xcode iOS DeviceSupport | Old device firmware files |
 | npm cache | `npm cache clean --force` |
 | pip3 cache | `pip cache purge` |
 | Homebrew cache | `brew cleanup --prune=all` |
-| Prullenmand | `~/.Trash` leegmaken |
-| `.DS_Store` | Max. 5 niveaus diep in `~` |
+| Trash | Empty `~/.Trash` |
+| `.DS_Store` | Up to 5 levels deep in `~` |
 | DNS cache | `dscacheutil` + `mDNSResponder` flush |
 
-> Browser caches (Chrome, Firefox, Brave, Safari) worden bewust **niet** aangeraakt.
+> Browser caches (Chrome, Firefox, Brave, Safari) are intentionally **never** touched.
 
-### Samenvatting
-Na afloop toont het script een kleurgecodeerd overzicht:
-- ✓ Bijgewerkt/opgeschoond
-- ⊘ Overgeslagen (tool niet geïnstalleerd)
-- ✗ Mislukt
+### Summary
+After completion the script shows a color-coded overview:
+- ✓ Updated / cleaned
+- ⊘ Skipped (tool not installed)
+- ✗ Failed
 
-## Installatie
+## Installation
 
 ```bash
 git clone https://github.com/funky-monkey/mac-update-and-cleanup.git
@@ -48,30 +48,30 @@ cd mac-update-and-cleanup
 ./update.sh --install
 ```
 
-Herstart je terminal en typ:
+Restart your terminal and run:
 
 ```bash
 update
 ```
 
-Het script installeert zichzelf naar `~/.local/bin/update` en voegt dat pad toe aan je `~/.zshrc` en `~/.bashrc`.
+The script installs itself to `~/.local/bin/update` and adds that path to your `~/.zshrc` and `~/.bashrc`.
 
-## Gebruik
+## Usage
 
 ```bash
-update              # Alles updaten + opschonen
-update --install    # (Her)installeer als 'update' commando
-update --help       # Toon hulptekst
+update              # Update and clean everything
+update --install    # (Re)install as the 'update' command
+update --help       # Show help
 ```
 
-## Vereisten
+## Requirements
 
-- macOS met zsh (ingebouwd)
-- `sudo`-rechten voor Apple Software Update en DNS cache flush
-- Optioneel: Homebrew, mas, npm, pip3, gem, rustup, Oh My Zsh
+- macOS with zsh (built-in)
+- `sudo` access for Apple Software Update and DNS cache flush
+- Optional: Homebrew, mas, npm, pip3, gem, rustup, Oh My Zsh
 
-Tools die niet geïnstalleerd zijn worden automatisch overgeslagen.
+Tools that are not installed are automatically skipped.
 
-## Licentie
+## License
 
 MIT
