@@ -230,17 +230,28 @@ update_omz() {
 update_cleanup() {
   print_header "Systeem Cleanup"
 
-  local freed=0
+  # Vraag bevestiging voor een stap; toont label + grootte
+  confirm_step() {
+    local label="$1"
+    local size="$2"
+    echo -n "  ${YELLOW}?${RESET} ${label}${size:+ ($size)} — verwijderen? [j/N] "
+    read -r reply </dev/tty
+    [[ "$reply" =~ ^[jJyY]$ ]]
+  }
 
-  # Helper: verwijder inhoud van een directory veilig
+  # Verwijder inhoud van een directory na bevestiging
   clean_dir() {
     local dir="$1"
     local label="$2"
     if [[ -d "$dir" ]]; then
-      local size_before
-      size_before=$(du -sh "$dir" 2>/dev/null | cut -f1 || echo "?")
-      rm -rf "${dir:?}"/* 2>/dev/null || true
-      echo "  ${GREEN}✓${RESET} $label geleegd ($size_before)"
+      local size
+      size=$(du -sh "$dir" 2>/dev/null | cut -f1 || echo "?")
+      if confirm_step "$label" "$size"; then
+        rm -rf "${dir:?}"/* 2>/dev/null || true
+        print_success "$label geleegd ($size vrijgemaakt)"
+      else
+        echo "  ${YELLOW}⊘${RESET} $label overgeslagen"
+      fi
     fi
   }
 
@@ -256,51 +267,69 @@ update_cleanup() {
   # iOS Device Support (kan gigabytes zijn)
   clean_dir "$HOME/Library/Developer/Xcode/iOS DeviceSupport" "Xcode iOS DeviceSupport"
 
-  # Browser caches
-  for BROWSER_CACHE in \
-    "$HOME/Library/Caches/Google/Chrome" \
-    "$HOME/Library/Application Support/Google/Chrome/Default/Cache" \
-    "$HOME/Library/Caches/com.google.Chrome" \
-    "$HOME/Library/Caches/Firefox/Profiles" \
-    "$HOME/Library/Caches/com.brave.Browser" \
-    "$HOME/Library/Caches/com.apple.Safari"; do
-    if [[ -d "$BROWSER_CACHE" ]]; then
-      rm -rf "${BROWSER_CACHE:?}"/* 2>/dev/null || true
-      echo "  ${GREEN}✓${RESET} Browser cache: $(basename "$BROWSER_CACHE")"
-    fi
-  done
-
   # npm cache
   if command_exists npm; then
-    npm cache clean --force 2>/dev/null || true
-    echo "  ${GREEN}✓${RESET} npm cache geleegd"
+    if confirm_step "npm cache" ""; then
+      npm cache clean --force 2>/dev/null || true
+      print_success "npm cache geleegd"
+    else
+      echo "  ${YELLOW}⊘${RESET} npm cache overgeslagen"
+    fi
   fi
 
   # pip cache
   if command_exists pip3; then
-    pip3 cache purge 2>/dev/null || true
-    echo "  ${GREEN}✓${RESET} pip3 cache geleegd"
+    local pip_size
+    pip_size=$(pip3 cache info 2>/dev/null | grep -i "size" | awk '{print $NF}' || echo "?")
+    if confirm_step "pip3 cache" "$pip_size"; then
+      pip3 cache purge 2>/dev/null || true
+      print_success "pip3 cache geleegd"
+    else
+      echo "  ${YELLOW}⊘${RESET} pip3 cache overgeslagen"
+    fi
   fi
 
   # Homebrew cache
   if command_exists brew; then
-    brew cleanup --prune=all 2>/dev/null || true
-    echo "  ${GREEN}✓${RESET} Homebrew download cache geleegd"
+    local brew_size
+    brew_size=$(brew cleanup --dry-run 2>/dev/null | tail -1 | grep -oE '[0-9.]+ [KMG]B' || echo "?")
+    if confirm_step "Homebrew download cache" "$brew_size"; then
+      brew cleanup --prune=all 2>/dev/null || true
+      print_success "Homebrew download cache geleegd"
+    else
+      echo "  ${YELLOW}⊘${RESET} Homebrew cache overgeslagen"
+    fi
   fi
 
-  # Prullenmand leegmaken
-  rm -rf "$HOME/.Trash/"* 2>/dev/null || true
-  echo "  ${GREEN}✓${RESET} Prullenmand geleegd"
+  # Prullenmand
+  local trash_size
+  trash_size=$(du -sh "$HOME/.Trash" 2>/dev/null | cut -f1 || echo "?")
+  if confirm_step "Prullenmand" "$trash_size"; then
+    rm -rf "$HOME/.Trash/"* 2>/dev/null || true
+    print_success "Prullenmand geleegd ($trash_size vrijgemaakt)"
+  else
+    echo "  ${YELLOW}⊘${RESET} Prullenmand overgeslagen"
+  fi
 
-  # .DS_Store bestanden verwijderen (home directory, niet recursief heel systeem)
-  find "$HOME" -maxdepth 5 -name ".DS_Store" -delete 2>/dev/null || true
-  echo "  ${GREEN}✓${RESET} .DS_Store bestanden verwijderd"
+  # .DS_Store bestanden
+  local ds_count
+  ds_count=$(find "$HOME" -maxdepth 5 -name ".DS_Store" 2>/dev/null | wc -l | tr -d ' ')
+  if confirm_step ".DS_Store bestanden" "$ds_count bestanden"; then
+    find "$HOME" -maxdepth 5 -name ".DS_Store" -delete 2>/dev/null || true
+    print_success ".DS_Store bestanden verwijderd ($ds_count stuks)"
+  else
+    echo "  ${YELLOW}⊘${RESET} .DS_Store overgeslagen"
+  fi
 
-  # DNS cache flushen
-  sudo dscacheutil -flushcache 2>/dev/null && \
-    sudo killall -HUP mDNSResponder 2>/dev/null && \
-    echo "  ${GREEN}✓${RESET} DNS cache geflushed" || \
-    echo "  ${YELLOW}⊘${RESET} DNS flush overgeslagen (geen sudo)"
+  # DNS cache
+  if confirm_step "DNS cache flushen" ""; then
+    sudo dscacheutil -flushcache 2>/dev/null && \
+      sudo killall -HUP mDNSResponder 2>/dev/null && \
+      print_success "DNS cache geflushed" || \
+      echo "  ${YELLOW}⊘${RESET} DNS flush overgeslagen (geen sudo)"
+  else
+    echo "  ${YELLOW}⊘${RESET} DNS flush overgeslagen"
+  fi
 
   print_success "Cleanup voltooid"
   UPDATED_TOOLS+=("Systeem Cleanup")

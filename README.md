@@ -17,18 +17,22 @@ Een enkel zsh-script dat je hele Mac bijwerkt én opschoont via één commando: 
 | Oh My Zsh | `omz update --unattended` of `git pull` als fallback |
 
 ### Cleanup (CleanMyMac-stijl)
-Wordt uitgevoerd **na** alle updates:
+Wordt uitgevoerd **na** alle updates. **Voor elke stap vraagt het script bevestiging** (`[j/N]`) en toont de huidige grootte zodat je bewust kiest wat je verwijdert:
 
-- `~/Library/Caches` leegmaken
-- `~/Library/Logs` leegmaken
-- Xcode DerivedData + iOS DeviceSupport verwijderen
-- Browser caches (Chrome, Firefox, Brave, Safari)
-- npm cache (`npm cache clean --force`)
-- pip cache (`pip cache purge`)
-- Homebrew download cache (`brew cleanup --prune=all`)
-- Prullenmand leegmaken
-- `.DS_Store` bestanden verwijderen (max. 5 niveaus diep)
-- DNS cache flushen (`dscacheutil` + `mDNSResponder`)
+| Stap | Wat er verwijderd wordt |
+|------|------------------------|
+| `~/Library/Caches` | User app caches |
+| `~/Library/Logs` | User log bestanden |
+| Xcode DerivedData | Build artefacten |
+| Xcode iOS DeviceSupport | Oude device firmware bestanden |
+| npm cache | `npm cache clean --force` |
+| pip3 cache | `pip cache purge` |
+| Homebrew cache | `brew cleanup --prune=all` |
+| Prullenmand | `~/.Trash` leegmaken |
+| `.DS_Store` | Max. 5 niveaus diep in `~` |
+| DNS cache | `dscacheutil` + `mDNSResponder` flush |
+
+> Browser caches (Chrome, Firefox, Brave, Safari) worden bewust **niet** aangeraakt.
 
 ### Samenvatting
 Na afloop toont het script een kleurgecodeerd overzicht:
